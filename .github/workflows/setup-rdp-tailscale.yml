@@ -1,0 +1,50 @@
+name: Setup Tailscale + XRDP
+
+on:
+  workflow_dispatch:
+    inputs:
+      remote_host:
+        description: 'SSH target host or IP'
+        required: true
+        default: ''
+      remote_user:
+        description: 'SSH user on target host'
+        required: true
+        default: ubuntu
+      tailscale_hostname:
+        description: 'Optional Tailscale hostname for the remote machine'
+        required: false
+        default: ''
+
+jobs:
+  setup-rdp:
+    name: Provision remote host with Tailscale and XRDP
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install remote dependencies
+        run: sudo apt-get update && sudo apt-get install -y curl apt-transport-https ca-certificates gnupg software-properties-common
+
+      - name: Configure remote host and install Tailscale + XRDP
+        uses: appleboy/ssh-action@v0.1.9
+        with:
+          host: ${{ github.event.inputs.remote_host }}
+          username: ${{ github.event.inputs.remote_user }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          strictHostKeyChecking: no
+          script: |
+            set -euo pipefail
+            export DEBIAN_FRONTEND=noninteractive
+            sudo apt-get update
+            sudo apt-get install -y curl apt-transport-https ca-certificates gnupg software-properties-common
+            curl -fsSL https://tailscale.com/install.sh | sh
+            sudo systemctl enable --now tailscaled
+            sudo apt-get install -y xrdp xfce4 xfce4-goodies
+            sudo systemctl enable --now xrdp
+            sudo sed -i 's/console/anybody/' /etc/X11/Xwrapper.config || true
+            if [ -n "${{ github.event.inputs.tailscale_hostname }}" ]; then
+              sudo tailscale up --authkey "${{ secrets.TAILSCALE_AUTHKEY }}" --hostname "${{ github.event.inputs.tailscale_hostname }}" --accept-routes
+            else
+              sudo tailscale up --authkey "${{ secrets.TAILSCALE_AUTHKEY }}" --accept-routes
+            fi
+            sudo tailscale status
