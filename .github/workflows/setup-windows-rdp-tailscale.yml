@@ -1,0 +1,51 @@
+name: Setup Windows RDP + Tailscale
+
+on:
+  workflow_dispatch:
+    inputs:
+      remote_host:
+        description: 'SSH target host or Windows host name/IP'
+        required: true
+        default: ''
+      remote_user:
+        description: 'SSH user on the Windows target host'
+        required: true
+        default: Administrator
+      tailscale_hostname:
+        description: 'Optional Tailscale hostname for the remote Windows machine'
+        required: false
+        default: ''
+
+jobs:
+  setup-windows-rdp:
+    name: Provision Windows host with Tailscale and enable RDP
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure remote Windows host
+        uses: appleboy/ssh-action@v0.1.9
+        with:
+          host: ${{ github.event.inputs.remote_host }}
+          username: ${{ github.event.inputs.remote_user }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          shell: pwsh
+          strictHostKeyChecking: no
+          script: |
+            $ErrorActionPreference = 'Stop'
+            $tailscaleMsi = 'https://pkgs.tailscale.com/stable/tailscale-setup.msi'
+            $downloadPath = "$env:TEMP\tailscale-setup.msi"
+            Invoke-WebRequest -Uri $tailscaleMsi -OutFile $downloadPath
+            Start-Process msiexec.exe -ArgumentList '/i', $downloadPath, '/quiet', '/norestart' -Wait
+            Remove-Item -Path $downloadPath -Force
+            $tailscalePath = 'C:\Program Files\Tailscale\tailscale.exe'
+            if (-Not (Test-Path $tailscalePath)) {
+              Write-Error "Tailscale executable not found at $tailscalePath"
+            }
+            if ([string]::IsNullOrEmpty('${{ github.event.inputs.tailscale_hostname }}')) {
+              & $tailscalePath up --authkey "${{ secrets.TAILSCALE_AUTHKEY }}" --accept-routes
+            } else {
+              & $tailscalePath up --authkey "${{ secrets.TAILSCALE_AUTHKEY }}" --hostname "${{ github.event.inputs.tailscale_hostname }}" --accept-routes
+            }
+            Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name 'fDenyTSConnections' -Value 0
+            Enable-NetFirewallRule -DisplayGroup 'Remote Desktop'
+            & $tailscalePath status

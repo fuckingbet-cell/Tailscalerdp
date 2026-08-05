@@ -9,12 +9,14 @@ This repository contains a GitHub Actions workflow to provision a remote Ubuntu 
    - `TAILSCALE_AUTHKEY`: Tailscale auth key with appropriate tags
 
 2. Run the workflow manually from GitHub Actions:
-   - Select `Setup Tailscale + XRDP`
-   - Set `remote_host` to the remote machine address
-   - Set `remote_user` to the SSH username (default: `ubuntu`)
-   - Optionally set `tailscale_hostname`
+   - Choose either `Setup Tailscale + XRDP` for Ubuntu/Linux hosts or `Setup Windows RDP + Tailscale` for Windows hosts.
+   - Set `remote_host` to the remote machine address.
+   - Set `remote_user` to the remote login user (`ubuntu` for Linux, `Administrator` for Windows by default).
+   - Optionally set `tailscale_hostname`.
 
-3. After completion, the remote host should appear in your Tailscale network and XRDP should be enabled.
+3. After completion:
+   - Linux hosts will be available via Tailscale and XRDP.
+   - Windows hosts will be available via Tailscale and native Remote Desktop.
 
 ## Notes
 
