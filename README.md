@@ -18,6 +18,11 @@ This repository contains a GitHub Actions workflow to provision a remote Ubuntu 
    - Linux hosts will be available via Tailscale and XRDP.
    - Windows hosts will be available via Tailscale and native Remote Desktop.
 
+4. Hostname usage:
+   - If `tailscale_hostname` is provided, the machine will register with that hostname in Tailscale.
+   - If omitted, the host's OS hostname will be used.
+   - You can connect to the machine via `hostname.tailscale.net` from another Tailscale-connected device.
+
 ## Notes
 
 - The workflow uses `appleboy/ssh-action` to execute installation commands on the remote server.

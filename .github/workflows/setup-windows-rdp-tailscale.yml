@@ -41,11 +41,11 @@ jobs:
             if (-Not (Test-Path $tailscalePath)) {
               Write-Error "Tailscale executable not found at $tailscalePath"
             }
-            if ([string]::IsNullOrEmpty('${{ github.event.inputs.tailscale_hostname }}')) {
-              & $tailscalePath up --authkey "${{ secrets.TAILSCALE_AUTHKEY }}" --accept-routes
-            } else {
-              & $tailscalePath up --authkey "${{ secrets.TAILSCALE_AUTHKEY }}" --hostname "${{ github.event.inputs.tailscale_hostname }}" --accept-routes
+            $TS_HOSTNAME = '${{ github.event.inputs.tailscale_hostname }}'
+            if ([string]::IsNullOrEmpty($TS_HOSTNAME)) {
+              $TS_HOSTNAME = $env:COMPUTERNAME
             }
+            & $tailscalePath up --authkey "${{ secrets.TAILSCALE_AUTHKEY }}" --hostname "$TS_HOSTNAME" --accept-routes
             Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name 'fDenyTSConnections' -Value 0
             Enable-NetFirewallRule -DisplayGroup 'Remote Desktop'
             & $tailscalePath status

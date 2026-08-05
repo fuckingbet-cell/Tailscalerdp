@@ -42,9 +42,9 @@ jobs:
             sudo apt-get install -y xrdp xfce4 xfce4-goodies
             sudo systemctl enable --now xrdp
             sudo sed -i 's/console/anybody/' /etc/X11/Xwrapper.config || true
-            if [ -n "${{ github.event.inputs.tailscale_hostname }}" ]; then
-              sudo tailscale up --authkey "${{ secrets.TAILSCALE_AUTHKEY }}" --hostname "${{ github.event.inputs.tailscale_hostname }}" --accept-routes
-            else
-              sudo tailscale up --authkey "${{ secrets.TAILSCALE_AUTHKEY }}" --accept-routes
+            TS_HOSTNAME="${{ github.event.inputs.tailscale_hostname }}"
+            if [ -z "$TS_HOSTNAME" ]; then
+              TS_HOSTNAME=$(hostname)
             fi
+            sudo tailscale up --authkey "${{ secrets.TAILSCALE_AUTHKEY }}" --hostname "$TS_HOSTNAME" --accept-routes
             sudo tailscale status
